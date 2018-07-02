@@ -4,9 +4,9 @@ import math
 from scipy.ndimage.filters import convolve
 from numpy import uint8, float32, float64, log, pi, sin, cos, abs, sqrt
 
-w3 = np.ones((3,3)) / float(3*3)
-w5 = np.ones((5,5)) / float(5*5)
-se = np.array([[-1, -1, -1],
+w3 = np.ones((3,3)) / float(3*3)    #平滑化のためのマスク
+w5 = np.ones((5,5)) / float(5*5)    
+se = np.array([[-1, -1, -1],        #先鋭化のためのマスク
               [-1, 9, -1],
               [-1, -1, -1]])
 
@@ -14,18 +14,18 @@ se = np.array([[-1, -1, -1],
 def myfunc(i):
     pass # do nothing
 
-def s_tone (x):
-    y = (np.sin(np.pi * (x/255 - 0.5)) + 1)/2 * 255
+def s_tone (x):  #S字カーブ
+    y = (np.sin(np.pi * (x/255 - 0.5)) + 1)/2 * 255 
     return y
 
-def gamma (x,v):
+def gamma (x,v):   #ガンマ変換
     c = 1
     x01 = x/255
     y01 = c * (x01**v)
     y = y01*255
     return y
 
-def bgrcolor (x,b,g,r):
+def bgrcolor (x,b,g,r):  #BGR色調の調整
     f = np.zeros(x.shape)
     f[:,:,0] = gamma(x[:,:,0],b/10)
     f[:,:,1] = gamma(x[:,:,1],g/10)
@@ -33,7 +33,7 @@ def bgrcolor (x,b,g,r):
     return f
     
 
-def filterr(x,n):
+def filterr(x,n):    #平滑化フィルタ
     con = np.zeros(x.shape)
     if(n == 1):
         con = convolve(x, w3)
@@ -43,7 +43,7 @@ def filterr(x,n):
         con = x
     return con
 
-def laplacian(x,n):
+def laplacian(x,n):     #ラプラシアンフィルタ
     if(n == 0):
         lap = cv2.Laplacian(x, cv2.CV_32F)
     elif(n == 1):
@@ -54,7 +54,7 @@ def laplacian(x,n):
         lap = x
     return lap
 
-def senei(x):
+def senei(x):   #先鋭化
     ims = convolve(x, se)
     return ims
 
@@ -62,7 +62,7 @@ def senei(x):
 cv2.namedWindow('image') # create win with win name
 cv2.namedWindow('image2')
 
-switch = '0 : gammaOFF \n1 : gammaON'
+switch = '0 : gammaOFF \n1 : gammaON'   #ガンマ変換用のスイッチ
 cv2.createTrackbar(switch,'image',0,1,myfunc)
 cv2.createTrackbar('gamma', # name of value
                    'image', # win name
@@ -70,29 +70,29 @@ cv2.createTrackbar('gamma', # name of value
                    10, # max
                    myfunc) # callback func
 
-switch3 = '0 : rgbOFF \n1 : rgbON'
-cv2.createTrackbar(switch3,'image',0,1,myfunc)
+switch3 = '0 : rbgOFF \n1 : rbgON'      #BGR調整用のスイッチ
+cv2.createTrackbar(switch3,'image',0,1,myfunc)  
 
 cv2.createTrackbar('B','image',0,255,myfunc)
 cv2.createTrackbar('G','image',0,255,myfunc)
 cv2.createTrackbar('R','image',0,255,myfunc)
 
-switch1 = '0 : hsvOFF \n1 : hsvON'
+switch1 = '0 : hsvOFF \n1 : hsvON'      #HSV調整用のスイッチ
 cv2.createTrackbar(switch1,'image',0,1,myfunc)
 
-switch2 = '0 : filterOFF \n1 : filterON'
+switch2 = '0 : filterOFF \n1 : filterON'   #平滑化フィルタ用のスイッチ
 cv2.createTrackbar(switch2,'image',0,1,myfunc)
 
-switch4 = '0 : lapOFF \n1 : lapON'
+switch4 = '0 : lapOFF \n1 : lapON'  #ラプラシアンフィルタ用のスイッチ
 cv2.createTrackbar(switch4,'image',0,1,myfunc)
 
-cv2.createTrackbar('num','image',0,2,myfunc)
+cv2.createTrackbar('num','image',0,2,myfunc)    #各フィルタにおける段階の切り替え
 
 
-switch5 = '0 : senOFF \n1 : senON'
+switch5 = '0 : senOFF \n1 : senON'  #先鋭化用のスイッチ
 cv2.createTrackbar(switch5,'image2',0,1,myfunc)
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0)   #
 cap.set(cv2.CAP_PROP_FRAME_WIDTH,  200)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 200)
 
