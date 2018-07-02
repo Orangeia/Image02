@@ -2,8 +2,14 @@ import numpy as np
 import cv2
 import math
 from scipy.ndimage.filters import convolve
-N = 3
-w = np.ones((N,N)) / float(N*N)
+from numpy import uint8, float32, float64, log, pi, sin, cos, abs, sqrt
+
+w3 = np.ones((3,3)) / float(3*3)
+w5 = np.ones((5,5)) / float(5*5)
+se = np.array([[-1, -1, -1],
+              [-1, 9, -1],
+              [-1, -1, -1]])
+
 
 def myfunc(i):
     pass # do nothing
@@ -13,27 +19,48 @@ def s_tone (x):
     return y
 
 def gamma (x,v):
-    #print(v)
     c = 1
     x01 = x/255
     y01 = c * (x01**v)
     y = y01*255
     return y
 
-def rgbcolor (x,r,g,b,s):
-    if(s == 1):
-        y = x[:,:,0]
-        return y
-    else:
-        return x
+def bgrcolor (x,b,g,r):
+    f = np.zeros(x.shape)
+    f[:,:,0] = gamma(x[:,:,0],b/10)
+    f[:,:,1] = gamma(x[:,:,1],g/10)
+    f[:,:,2] = gamma(x[:,:,2],r/10)
+    return f
     
-def filterr(im,w):
-    imf = convolve(im, w)
-    return imf
+
+def filterr(x,n):
+    con = np.zeros(x.shape)
+    if(n == 1):
+        con = convolve(x, w3)
+    elif(n == 2):
+        con = convolve(x, w5)
+    else:
+        con = x
+    return con
+
+def laplacian(x,n):
+    if(n == 0):
+        lap = cv2.Laplacian(x, cv2.CV_32F)
+    elif(n == 1):
+        lap = cv2.Laplacian(x, cv2.CV_32F,ksize=3)
+    elif(n == 2):
+        lap = cv2.Laplacian(x, cv2.CV_32F,ksize=5)
+    else:
+        lap = x
+    return lap
+
+def senei(x):
+    ims = convolve(x, se)
+    return ims
+
 
 cv2.namedWindow('image') # create win with win name
-
-
+cv2.namedWindow('image2')
 
 switch = '0 : gammaOFF \n1 : gammaON'
 cv2.createTrackbar(switch,'image',0,1,myfunc)
@@ -43,13 +70,27 @@ cv2.createTrackbar('gamma', # name of value
                    10, # max
                    myfunc) # callback func
 
+switch3 = '0 : rgbOFF \n1 : rgbON'
+cv2.createTrackbar(switch3,'image',0,1,myfunc)
 
+cv2.createTrackbar('B','image',0,255,myfunc)
+cv2.createTrackbar('G','image',0,255,myfunc)
+cv2.createTrackbar('R','image',0,255,myfunc)
 
 switch1 = '0 : hsvOFF \n1 : hsvON'
 cv2.createTrackbar(switch1,'image',0,1,myfunc)
 
 switch2 = '0 : filterOFF \n1 : filterON'
 cv2.createTrackbar(switch2,'image',0,1,myfunc)
+
+switch4 = '0 : lapOFF \n1 : lapON'
+cv2.createTrackbar(switch4,'image',0,1,myfunc)
+
+cv2.createTrackbar('num','image',0,2,myfunc)
+
+
+switch5 = '0 : senOFF \n1 : senON'
+cv2.createTrackbar(switch5,'image2',0,1,myfunc)
 
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH,  200)
@@ -60,38 +101,46 @@ while(True):
 
     ret, frame = cap.read()
     if not ret: continue
-    #print(frame)
-
 
     gm = cv2.getTrackbarPos('gamma',  # get the value
                            'image')  # of the win
     s = cv2.getTrackbarPos(switch,'image')
     s1 = cv2.getTrackbarPos(switch1,'image')
     s2 = cv2.getTrackbarPos(switch2,'image')
+    s3 = cv2.getTrackbarPos(switch3,'image')
+    s4 = cv2.getTrackbarPos(switch4,'image')
+    s5 = cv2.getTrackbarPos(switch5,'image2')
+    b = cv2.getTrackbarPos('B','image')
+    g = cv2.getTrackbarPos('G','image')
+    r = cv2.getTrackbarPos('R','image')
+    n = cv2.getTrackbarPos('num','image')
 
     ## do something by using v
     
     img_gs = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     img_bgr = cv2.split(frame)
     frame_s = s_tone(frame)
-    frame_rgb = rgbcolor(frame,r,g,b,s)
     
-    if(s == 1 and s1 == 0 and s2 == 0):
+    if(s == 1 and s1 == 0 and s2 == 0 and s3 == 0 and s4 == 0 and s5 == 0):
         frame_g = gamma(frame,gm)
         cv2.imshow('image', frame_g)  # show in the win
-    elif(s == 0 and s1 == 1 and s2 == 0):
+    elif(s == 0 and s1 == 1 and s2 == 0 and s3 == 0 and s4 == 0 and s5 == 0):
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         cv2.imshow('image', frame_hsv)
-    elif(s == 0 and s1 == 0 and s2 == 1):
-        cv2.imshow('image', filterr(img_gs,w))
+    elif(s == 0 and s1 == 0 and s2 == 1 and s3 == 0 and s4 == 0 and s5 == 0):
+        cv2.imshow('image', filterr(img_gs,n))
+    elif(s == 0 and s1 == 0 and s2 == 0 and s3 == 1 and s4 == 0 and s5 == 0):
+        cv2.imshow('image', bgrcolor(frame,b,g,r))
+    elif(s == 0 and s1 == 0 and s2 == 0 and s3 == 0 and s4 == 1 and s5 == 0):
+        cv2.imshow('image', laplacian(img_gs,n))
+    elif(s == 0 and s1 == 0 and s2 == 0 and s3 == 0 and s4 == 0 and s5 == 1):
+        cv2.imshow('image2', senei(img_gs))
     else:
         cv2.imshow('image', frame)
     
     k = cv2.waitKey(1)
     if k == ord('q') or k == 27:
         break
-
-
 
 cap.release()
 cv2.destroyAllWindows()
